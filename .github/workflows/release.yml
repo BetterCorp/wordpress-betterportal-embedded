@@ -39,4 +39,4 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
-          rm -rf build dist
+          ./cleanup.sh

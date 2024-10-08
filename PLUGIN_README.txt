@@ -1,6 +1,5 @@
 == BetterPortal Theme Embedded ===
-Contributors: bettercorp
-Tags: betterportal, embed, theme, betterportal-cloud
+Tags: betterportal, embed, theme, betterportal.cloud
 Requires at least: 6.0
 Tested up to: 6.6.2
 Stable tag: {{VERSION}}
