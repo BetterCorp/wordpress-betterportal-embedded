@@ -1,6 +1,7 @@
 name: Build and Release
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - 'v*'
@@ -15,20 +16,10 @@ jobs:
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
-      - name: Replace version in PHP file
-        run: sed -i 's/{{VERSION}}/${{ steps.get_version.outputs.VERSION }}/g' src/betterportal-theme-embedded.php
-
-      - name: Create release folder
-        run: mkdir betterportal-theme-embedded
-
-      - name: Copy files to release folder
+      - name: Build plugin
         run: |
-          cp -R src/* betterportal-theme-embedded/
-          cp README.md betterportal-theme-embedded/
-          cp LICENSE betterportal-theme-embedded/
-
-      - name: Create ZIP archive
-        run: zip -r betterportal-theme-embedded.zip betterportal-theme-embedded
+          chmod +x build.sh
+          ./build.sh ${{ steps.get_version.outputs.VERSION }}
 
       - name: Create Release
         env:
@@ -37,4 +28,4 @@ jobs:
           gh release create ${{ steps.get_version.outputs.VERSION }} \
             --title "Release ${{ steps.get_version.outputs.VERSION }}" \
             --notes "Release ${{ steps.get_version.outputs.VERSION }}" \
-            betterportal-theme-embedded.zip
+            dist/betterportal-theme-embedded-${{ steps.get_version.outputs.VERSION }}.zip
