@@ -1,4 +1,4 @@
-name: Re-Build and Release
+name: Package and Release
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ on:
       - 'v*'
 
 jobs:
-  build-and-release:
+  package-and-release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
