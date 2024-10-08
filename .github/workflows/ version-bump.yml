@@ -1,4 +1,4 @@
-name: Version Bump
+name: Version Bump and Plugin Check
 
 on:
   push:
@@ -6,12 +6,17 @@ on:
       - master
 
 jobs:
-  version-bump:
+  version-bump-and-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.0'
 
       - name: Get base version from VERSION.md
         id: get_base_version
@@ -28,10 +33,8 @@ jobs:
           latest_tag="${{ steps.get_latest_tag.outputs.LATEST_TAG }}"
           
           if [ "$(printf '%s\n' "$base_version" "$latest_tag" | sort -V | tail -n1)" = "$base_version" ]; then
-            # Use base version if it's greater
             new_version="$base_version"
           else
-            # Increment patch version of latest tag
             version=$(echo $latest_tag | sed 's/v//')
             IFS='.' read -ra ADDR <<< "$version"
             new_patch=$((ADDR[2] + 1))
@@ -40,7 +43,27 @@ jobs:
           
           echo "NEW_VERSION=$new_version" >> $GITHUB_OUTPUT
 
+      - name: Build plugin
+        run: |
+          chmod +x build.sh
+          ./build.sh ${{ steps.determine_version.outputs.NEW_VERSION }}
+
+      - name: Install WordPress Plugin Check
+        run: |
+          composer global require wp-cli/wp-cli-bundle
+          composer global require wp-cli/checksum-command
+          composer global require wp-cli/i18n-command
+          composer global require wp-coding-standards/wpcs
+          composer global require dealerdirect/phpcodesniffer-composer-installer
+          composer global require wp-cli/plugin-check-command
+
+      - name: Run Plugin Check
+        run: |
+          export PATH=$PATH:$HOME/.composer/vendor/bin
+          wp plugin check dist/betterportal-theme-embedded-${{ steps.determine_version.outputs.NEW_VERSION }}.zip --format=summary
+
       - name: Create and push new tag
+        if: success()
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
@@ -48,6 +71,7 @@ jobs:
           git push origin ${{ steps.determine_version.outputs.NEW_VERSION }}
 
       - name: Trigger build and release
+        if: success()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

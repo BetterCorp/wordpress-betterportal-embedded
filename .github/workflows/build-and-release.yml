@@ -7,10 +7,15 @@ on:
       - 'v*'
 
 jobs:
-  build:
+  build-and-release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.0'
 
       - name: Get the version
         id: get_version
@@ -21,7 +26,22 @@ jobs:
           chmod +x build.sh
           ./build.sh ${{ steps.get_version.outputs.VERSION }}
 
+      - name: Install WordPress Plugin Check
+        run: |
+          composer global require wp-cli/wp-cli-bundle
+          composer global require wp-cli/checksum-command
+          composer global require wp-cli/i18n-command
+          composer global require wp-coding-standards/wpcs
+          composer global require dealerdirect/phpcodesniffer-composer-installer
+          composer global require wp-cli/plugin-check-command
+
+      - name: Run Plugin Check
+        run: |
+          export PATH=$PATH:$HOME/.composer/vendor/bin
+          wp plugin check dist/betterportal-theme-embedded-${{ steps.get_version.outputs.VERSION }}.zip --format=summary
+
       - name: Create Release
+        if: success()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
