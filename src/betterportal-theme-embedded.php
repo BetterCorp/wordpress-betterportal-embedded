@@ -54,7 +54,7 @@ class BetterPortal_Theme_Embedded {
         $pages_with_shortcode = $this->get_pages_with_shortcode();
         foreach ($pages_with_shortcode as $page) {
             $rewrite_enabled = get_post_meta($page['page']->ID, '_betterportal_rewrite_enabled', true);
-            if ($page['needs_rewrite'] && $rewrite_enabled === '1') {
+            if ($page['needs_rewrite'] && $rewrite_enabled !== '0') {
                 $page_path = trim(str_replace(home_url(), '', get_permalink($page['page'])), '/');
                 add_rewrite_rule(
                     $page_path . '/(.*)$',
@@ -222,47 +222,67 @@ class BetterPortal_Theme_Embedded {
     public function register_settings() {
         register_setting('betterportal_options', 'betterportal_options');
 
-        // Actions tab
-        add_settings_section(
-            'betterportal_actions_section',
-            'Actions',
-            null,
-            'betterportal-settings-actions'
-        );
-
-        // Config tab
         add_settings_section(
             'betterportal_config_section',
             'Configuration',
             null,
-            'betterportal-settings-config'
+            'betterportal-settings'
         );
         add_settings_field(
             'betterportal_host',
             'BetterPortal Host',
             array($this, 'host_field_callback'),
-            'betterportal-settings-config',
+            'betterportal-settings',
             'betterportal_config_section'
-        );
-
-        // Pages tab
-        add_settings_section(
-            'betterportal_pages_section',
-            'Pages with BetterPortal Embed',
-            array($this, 'render_pages_section'),
-            'betterportal-settings-pages'
         );
     }
 
     public function host_field_callback() {
         $host = $this->get_host();
         echo "<input type='text' name='betterportal_options[host]' value='" . esc_attr($host) . "' />";
-        $this->register_betterportal_rewrites();
-        flush_rewrite_rules();
     }
 
-    public function flush_rewrites_button_callback() {
-        echo '<input type="submit" name="flush_rewrites" class="button button-secondary" value="Flush Rewrite Rules">';
+    public function render_settings_page() {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        if (isset($_POST['save_rewrite_settings'])) {
+            $this->handle_rewrite_settings();
+        }
+
+        if (isset($_POST['flush_rewrites'])) {
+            $this->handle_flush_rewrites();
+        }
+
+        ?>
+        <div class="wrap">
+            <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
+
+            <form action="options.php" method="post">
+                <?php
+                settings_fields('betterportal_options');
+                do_settings_sections('betterportal-settings');
+                submit_button('Save Configuration');
+                ?>
+            </form>
+
+            <h2>Pages with BetterPortal Embed</h2>
+            <form method="post" action="">
+                <?php
+                $this->render_pages_section();
+                wp_nonce_field('betterportal_rewrite_settings', 'betterportal_rewrite_nonce');
+                ?>
+                <div style="margin-top: 20px;">
+                    <?php
+                    submit_button('Save Rewrite Settings', 'primary', 'save_rewrite_settings', false);
+                    echo ' ';
+                    submit_button('Flush Rewrite Rules', 'secondary', 'flush_rewrites', false);
+                    ?>
+                </div>
+            </form>
+        </div>
+        <?php
     }
 
     public function render_pages_section() {
@@ -272,7 +292,7 @@ class BetterPortal_Theme_Embedded {
             return;
         }
 
-        echo '<table class="widefat">';
+        echo '<table class="widefat" style="margin-bottom: 20px;">';
         echo '<thead><tr><th>Page Title</th><th>URL</th><th>Shortcodes</th><th>Rewrite</th></tr></thead>';
         echo '<tbody>';
         foreach ($pages as $page) {
@@ -296,72 +316,34 @@ class BetterPortal_Theme_Embedded {
             echo '</tr>';
         }
         echo '</tbody></table>';
-        
-        submit_button('Save Rewrite Settings');
     }
 
-    public function handle_rewrite_settings()
-    {
-        if (!isset($_POST['betterportal_rewrite_nonce']) || !wp_verify_nonce(wp_unslash($_POST['betterportal_rewrite_nonce']), 'betterportal_rewrite_settings')) {
+    public function handle_rewrite_settings() {
+        if (!isset($_POST['betterportal_rewrite_nonce']) || !wp_verify_nonce($_POST['betterportal_rewrite_nonce'], 'betterportal_rewrite_settings')) {
             return;
         }
 
-        if (isset($_POST['betterportal_rewrite'])) {
-            $rewrite_settings = wp_unslash($_POST['betterportal_rewrite']);
-            $pages = $this->get_pages_with_shortcode();
-            
-            foreach ($pages as $page) {
-                $enabled = isset($rewrite_settings[$page['page']->ID]) ? '1' : '0';
-                update_post_meta($page['page']->ID, '_betterportal_rewrite_enabled', sanitize_text_field($enabled));
-            }
-
-            add_settings_error('betterportal_messages', 'betterportal_message', esc_html__('Rewrite settings saved.', 'betterportal-theme-embedded'), 'updated');
+        $pages = $this->get_pages_with_shortcode();
+        
+        foreach ($pages as $page) {
+            $enabled = isset($_POST['betterportal_rewrite'][$page['page']->ID]) ? '1' : '0';
+            update_post_meta($page['page']->ID, '_betterportal_rewrite_enabled', $enabled);
         }
-    }
 
-    public function render_settings_page()
-    {
-        $active_tab = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : 'actions';
-?>
-        <div class="wrap">
-            <h1>BetterPortal Settings</h1>
-            <h2 class="nav-tab-wrapper">
-                <a href="?page=betterportal-settings&tab=actions" class="nav-tab <?php echo $active_tab == 'actions' ? 'nav-tab-active' : ''; ?>">Actions</a>
-                <a href="?page=betterportal-settings&tab=config" class="nav-tab <?php echo $active_tab == 'config' ? 'nav-tab-active' : ''; ?>">Configuration</a>
-                <a href="?page=betterportal-settings&tab=pages" class="nav-tab <?php echo $active_tab == 'pages' ? 'nav-tab-active' : ''; ?>">Pages/Rewrites</a>
-            </h2>
+        $this->register_betterportal_rewrites();
+        flush_rewrite_rules();
 
-            <?php if ($active_tab == 'actions'): ?>
-                <?php do_settings_sections('betterportal-settings-actions'); ?>
-                <form method="post" action="">
-                    <?php
-                    wp_nonce_field('betterportal_flush_rewrites', 'betterportal_flush_rewrites_nonce');
-                    submit_button('Flush Rewrite Rules', 'primary', 'flush_rewrites', false);
-                    ?>
-                </form>
-
-            <?php elseif ($active_tab == 'config'): ?>
-                <form method="post" action="options.php">
-                    <?php
-                    settings_fields('betterportal_options');
-                    do_settings_sections('betterportal-settings-config');
-                    submit_button();
-                    ?>
-                </form>
-
-            <?php elseif ($active_tab == 'pages'): ?>
-                <?php do_settings_sections('betterportal-settings-pages'); ?>
-            <?php endif; ?>
-        </div>
-        <?php
+        add_settings_error('betterportal_messages', 'betterportal_message', esc_html__('Rewrite settings saved and rewrite rules updated.', 'betterportal-theme-embedded'), 'updated');
     }
 
     public function handle_flush_rewrites() {
-        if (isset($_POST['flush_rewrites']) && check_admin_referer('betterportal_flush_rewrites', 'betterportal_flush_rewrites_nonce')) {
-            $this->register_betterportal_rewrites();
-            flush_rewrite_rules();
-            add_settings_error('betterportal_messages', 'betterportal_message', 'Rewrite rules have been flushed.', 'updated');
+        if (!current_user_can('manage_options')) {
+            return;
         }
+
+        $this->register_betterportal_rewrites();
+        flush_rewrite_rules();
+        add_settings_error('betterportal_messages', 'betterportal_message', 'Rewrite rules have been flushed.', 'updated');
     }
 
     public function add_betterportal_meta_box() {
