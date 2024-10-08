@@ -6,7 +6,7 @@ on:
       - master
 
 jobs:
-  version-bump-and-check:
+  build-test-version-and-create-release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
