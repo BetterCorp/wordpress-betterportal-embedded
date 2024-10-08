@@ -19,7 +19,7 @@ jobs:
 
       - name: Get latest tag
         id: get_latest_tag
-        run: echo "LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo v0.0.0)" >> $GITHUB_OUTPUT
+        run: echo "LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo v0.0)" >> $GITHUB_OUTPUT
 
       - name: Determine new version
         id: determine_version
@@ -30,22 +30,22 @@ jobs:
           base_version="${base_version#v}"
           
           # Split the base version into major and minor
-          IFS='.' read -r major minor patch <<< "$base_version"
+          IFS='.' read -r major minor <<< "$base_version"
           
-          # Get the latest tag that matches the major.minor version
-          latest_tag=$(git tag -l "v$major.$minor.*" | sort -V | tail -n1)
+          # Get the latest tag that matches the major version
+          latest_tag=$(git tag -l "v$major.*" | sort -V | tail -n1)
           
           if [ -n "$latest_tag" ]; then
-            # If a matching tag exists, increment its micro version
-            current_micro=$(echo $latest_tag | awk -F. '{print $3}')
-            new_micro=$((current_micro + 1))
+            # If a matching tag exists, increment its minor version
+            current_minor=$(echo $latest_tag | awk -F. '{print $2}')
+            new_minor=$((current_minor + 1))
           else
-            # If no matching tag exists, use the micro version from VERSION.md
-            new_micro=$patch
+            # If no matching tag exists, use the minor version from VERSION.md
+            new_minor=$minor
           fi
           
           # Construct the new version
-          new_version="v$major.$minor.$new_micro"
+          new_version="v$major.$new_minor"
           
           echo "NEW_VERSION=$new_version" >> $GITHUB_OUTPUT
 
