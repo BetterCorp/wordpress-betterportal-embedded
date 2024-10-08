@@ -17,7 +17,7 @@ class Elementor_BetterPortal_Embed_Widget extends \Elementor\Widget_Base {
     }
 
     public function get_title() {
-        return __('BetterPortal Embed', 'betterportal-theme-embedded');
+        return esc_html__('BetterPortal Embed', 'betterportal-theme-embedded');
     }
 
     public function get_icon() {
@@ -32,7 +32,7 @@ class Elementor_BetterPortal_Embed_Widget extends \Elementor\Widget_Base {
         $this->start_controls_section(
             'content_section',
             [
-                'label' => __('Content', 'betterportal-theme-embedded'),
+                'label' => esc_html__('Content', 'betterportal-theme-embedded'),
                 'tab' => \Elementor\Controls_Manager::TAB_CONTENT,
             ]
         );
@@ -40,9 +40,9 @@ class Elementor_BetterPortal_Embed_Widget extends \Elementor\Widget_Base {
         $this->add_control(
             'path',
             [
-                'label' => __('Path', 'betterportal-theme-embedded'),
+                'label' => esc_html__('Path', 'betterportal-theme-embedded'),
                 'type' => \Elementor\Controls_Manager::TEXT,
-                'placeholder' => __('Optional: specific path', 'betterportal-theme-embedded'),
+                'placeholder' => esc_html__('Optional: specific path', 'betterportal-theme-embedded'),
             ]
         );
 
@@ -58,7 +58,7 @@ class Elementor_BetterPortal_Embed_Widget extends \Elementor\Widget_Base {
     protected function _content_template() {
         ?>
         <div class="betterportal-embed-placeholder">
-            <p><?php echo __('BetterPortal Embed will be displayed here', 'betterportal-theme-embedded'); ?></p>
+            <p><?php echo esc_html__('BetterPortal Embed will be displayed here', 'betterportal-theme-embedded'); ?></p>
         </div>
         <?php
     }
