@@ -11,10 +11,12 @@ if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
 
-class BetterPortal_Theme_Embedded {
+class BetterPortal_Theme_Embedded
+{
     private $defaultHost = 'embedded-theme.betterportal.net';
 
-    public function __construct() {
+    public function __construct()
+    {
         add_action('init', array($this, 'init'));
         add_action('admin_menu', array($this, 'add_settings_page'));
         add_action('admin_init', array($this, 'register_settings'));
@@ -30,24 +32,50 @@ class BetterPortal_Theme_Embedded {
         add_action('wp_head', array($this, 'add_preconnect_header'), 1);
     }
 
-    public function init() {
+    public function init()
+    {
         $this->register_betterportal_rewrites();
     }
 
     public function enqueue_scripts_and_styles()
-    {        
-        wp_enqueue_style(
-            'betterportal-loader',
-            plugins_url('css/betterportal-loader.css', __FILE__),
-            array(),
-            '{{VERSION}}'
-        );
-        wp_enqueue_script(
-            'betterportal-loader',
-            plugins_url('scripts/betterportal-loader.js', __FILE__),
-            array(),
-            '{{VERSION}}',
-            true
+    {
+        if ($this->current_page_has_betterportal()) {
+            wp_enqueue_style(
+                'betterportal-loader',
+                plugins_url('css/betterportal-loader.css', __FILE__),
+                array(),
+                '{{VERSION}}'
+            );
+            wp_enqueue_script(
+                'betterportal-loader',
+                plugins_url('scripts/betterportal-loader.js', __FILE__),
+                array(),
+                '{{VERSION}}',
+                true,
+                array('async' => true)
+            );
+        }
+    }
+
+    private function current_page_has_betterportal()
+    {
+        global $post;
+        if (!$post) return false;
+
+        $page_info = $this->get_page_shortcode_info($post->ID);
+        return $page_info['shortcodes_count'] > 0;
+    }
+
+    public function get_page_shortcode_info($post_id)
+    {
+        $post = get_post($post_id);
+        $shortcodes = $this->get_shortcodes_info($post->post_content);
+        $elementor_widgets = $this->get_elementor_widgets_info($post_id);
+
+        return array(
+            'shortcodes_count' => $shortcodes['count'] + $elementor_widgets['count'],
+            'has_path' => $shortcodes['has_path'] || $elementor_widgets['has_path'],
+            'needs_rewrite' => ($shortcodes['count'] - $shortcodes['path_count'] + $elementor_widgets['count'] - $elementor_widgets['path_count']) > 0
         );
     }
 
@@ -67,13 +95,14 @@ class BetterPortal_Theme_Embedded {
         }
     }
 
-    public function get_pages_with_shortcode() {
+    public function get_pages_with_shortcode()
+    {
         $pages = get_pages();
         $pages_with_shortcode = array();
         foreach ($pages as $page) {
             $shortcodes = $this->get_shortcodes_info($page->post_content);
             $elementor_widgets = $this->get_elementor_widgets_info($page->ID);
-            
+
             if ($shortcodes['count'] > 0 || $elementor_widgets['count'] > 0) {
                 $pages_with_shortcode[] = array(
                     'page' => $page,
@@ -86,7 +115,8 @@ class BetterPortal_Theme_Embedded {
         return $pages_with_shortcode;
     }
 
-    public function get_shortcodes_info($content) {
+    public function get_shortcodes_info($content)
+    {
         $count = 0;
         $path_count = 0;
         $has_path = false;
@@ -104,7 +134,8 @@ class BetterPortal_Theme_Embedded {
         return array('count' => $count, 'path_count' => $path_count, 'has_path' => $has_path);
     }
 
-    public function get_elementor_widgets_info($post_id) {
+    public function get_elementor_widgets_info($post_id)
+    {
         $count = 0;
         $path_count = 0;
         $has_path = false;
@@ -121,7 +152,8 @@ class BetterPortal_Theme_Embedded {
         return array('count' => $count, 'path_count' => $path_count, 'has_path' => $has_path);
     }
 
-    private function find_widgets_recursive($elements) {
+    private function find_widgets_recursive($elements)
+    {
         $count = 0;
         $path_count = 0;
         $has_path = false;
@@ -143,7 +175,8 @@ class BetterPortal_Theme_Embedded {
         return array('count' => $count, 'path_count' => $path_count, 'has_path' => $has_path);
     }
 
-    public function maybe_flush_rules($post_id) {
+    public function maybe_flush_rules($post_id)
+    {
         if (wp_is_post_revision($post_id)) {
             return;
         }
@@ -151,18 +184,21 @@ class BetterPortal_Theme_Embedded {
         flush_rewrite_rules();
     }
 
-    public function check_for_shortcode($content) {
+    public function check_for_shortcode($content)
+    {
         if ($this->page_has_shortcode($content)) {
             $this->maybe_flush_rules(get_the_ID());
         }
         return $content;
     }
 
-    public function page_has_shortcode($content) {
+    public function page_has_shortcode($content)
+    {
         return has_shortcode($content, 'betterportal_embed');
     }
 
-    public function betterportal_embed_shortcode($atts) {
+    public function betterportal_embed_shortcode($atts)
+    {
         static $instance = 0;
         $instance++;
 
@@ -173,7 +209,8 @@ class BetterPortal_Theme_Embedded {
         return $this->generate_embed_output($atts, $instance);
     }
 
-    public function generate_embed_output($atts, $instance) {
+    public function generate_embed_output($atts, $instance)
+    {
         $div_id = esc_attr('betterportal-form-' . $instance);
         $host = $this->get_host();
         $script_url = 'https://' . esc_attr($host) . '/import.js?div=' . $div_id;
@@ -182,7 +219,7 @@ class BetterPortal_Theme_Embedded {
             $script_url .= '&path=' . urlencode($atts['path']);
         }
 
-        $output = '<div data-bpe-wp-import="'.esc_attr($script_url).'">';
+        $output = '<div data-bpe-wp-import="' . esc_attr($script_url) . '">';
         $output .= '<div id="' . $div_id . '" class="bpe-wp-loader-container">';
         $output .= '<div class="bpe-wp-loader"></div>';
         $output .= '</div>';
@@ -191,17 +228,20 @@ class BetterPortal_Theme_Embedded {
         return $output;
     }
 
-    public function get_host() {
+    public function get_host()
+    {
         $options = get_option('betterportal_options');
         return isset($options['host']) && !empty($options['host']) ? $options['host'] : $this->defaultHost;
     }
 
-    public function register_elementor_widget($widgets_manager) {
+    public function register_elementor_widget($widgets_manager)
+    {
         require_once(__DIR__ . '/widgets/betterportal-embed-widget.php');
         $widgets_manager->register_widget_type(new \Elementor_BetterPortal_Embed_Widget());
     }
 
-    public function add_elementor_widget_category($elements_manager) {
+    public function add_elementor_widget_category($elements_manager)
+    {
         $elements_manager->add_category(
             'betterportal',
             [
@@ -211,7 +251,8 @@ class BetterPortal_Theme_Embedded {
         );
     }
 
-    public function add_settings_page() {
+    public function add_settings_page()
+    {
         add_options_page(
             'BetterPortal Settings',
             'BetterPortal',
@@ -221,7 +262,8 @@ class BetterPortal_Theme_Embedded {
         );
     }
 
-    public function register_settings() {
+    public function register_settings()
+    {
         register_setting('betterportal_options', 'betterportal_options');
 
         add_settings_section(
@@ -239,12 +281,14 @@ class BetterPortal_Theme_Embedded {
         );
     }
 
-    public function host_field_callback() {
+    public function host_field_callback()
+    {
         $host = $this->get_host();
         echo "<input type='text' name='betterportal_options[host]' value='" . esc_attr($host) . "' />";
     }
 
-    public function render_settings_page() {
+    public function render_settings_page()
+    {
         if (!current_user_can('manage_options')) {
             return;
         }
@@ -257,7 +301,7 @@ class BetterPortal_Theme_Embedded {
             $this->handle_flush_rewrites();
         }
 
-        ?>
+?>
         <div class="wrap">
             <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
 
@@ -269,7 +313,7 @@ class BetterPortal_Theme_Embedded {
                 ?>
             </form>
 
-            <h2>Pages with BetterPortal Embed</h2>
+            <h2><?php esc_html_e('Pages with BetterPortal Embed', 'betterportal-theme-embedded'); ?></h2>
             <form method="post" action="">
                 <?php
                 $this->render_pages_section();
@@ -277,34 +321,35 @@ class BetterPortal_Theme_Embedded {
                 ?>
                 <div style="margin-top: 20px;">
                     <?php
-                    submit_button('Save Rewrite Settings', 'primary', 'save_rewrite_settings', false);
+                    submit_button(__('Save Rewrite Settings', 'betterportal-theme-embedded'), 'primary', 'save_rewrite_settings', false);
                     echo ' ';
-                    submit_button('Flush Rewrite Rules', 'secondary', 'flush_rewrites', false);
+                    submit_button(__('Flush Rewrite Rules', 'betterportal-theme-embedded'), 'secondary', 'flush_rewrites', false);
                     ?>
                 </div>
             </form>
         </div>
-        <?php
+<?php
     }
 
-    public function render_pages_section() {
+    public function render_pages_section()
+    {
         $pages = $this->get_pages_with_shortcode();
         if (empty($pages)) {
-            echo '<p>No pages with BetterPortal embed found.</p>';
+            echo '<p>' . esc_html__('No pages with BetterPortal embed found.', 'betterportal-theme-embedded') . '</p>';
             return;
         }
 
         echo '<table class="widefat" style="margin-bottom: 20px;">';
-        echo '<thead><tr><th>Page Title</th><th>URL</th><th>Embedded Paths</th><th>Wildcard/URL Linked</th></tr></thead>';
+        echo '<thead><tr><th>' . esc_html__('Page Title', 'betterportal-theme-embedded') . '</th><th>' . esc_html__('URL', 'betterportal-theme-embedded') . '</th><th>' . esc_html__('Embedded Paths', 'betterportal-theme-embedded') . '</th><th>' . esc_html__('Wildcard/URL Linked', 'betterportal-theme-embedded') . '</th></tr></thead>';
         echo '<tbody>';
         foreach ($pages as $page) {
             $edit_link = get_edit_post_link($page['page']->ID);
             $page_url = get_permalink($page['page']->ID);
             $rewrite_enabled = get_post_meta($page['page']->ID, '_betterportal_rewrite_enabled', true);
             $rewrite_enabled = $rewrite_enabled !== '' ? $rewrite_enabled : '1'; // Default to enabled
-            
+
             $shortcode_info = $this->get_detailed_shortcode_info($page['page']->post_content, $page['page']->ID);
-            
+
             echo '<tr>';
             echo '<td><a href="' . esc_url($edit_link) . '">' . esc_html($page['page']->post_title) . '</a></td>';
             echo '<td><a href="' . esc_url($page_url) . '" target="_blank">' . esc_url($page_url) . '</a></td>';
@@ -316,16 +361,16 @@ class BetterPortal_Theme_Embedded {
                 }
                 echo '</ul>';
             } else {
-                echo 'None';
+                esc_html_e('None', 'betterportal-theme-embedded');
             }
             echo '</td>';
             echo '<td>';
             $wildcard_count = $shortcode_info['total_count'] - count($shortcode_info['defined_paths']);
-            echo 'Count: ' . esc_html($wildcard_count);
+            echo esc_html__('Count:', 'betterportal-theme-embedded') . ' ' . esc_html($wildcard_count);
             if ($wildcard_count > 0) {
                 echo '<br>';
-                echo '<label><input type="checkbox" name="betterportal_rewrite[' . $page['page']->ID . ']" value="1" ' . checked($rewrite_enabled, '1', false) . '> Enable';
-                echo ' rewrites <i><u>' . esc_url(str_replace(home_url(), '', $page_url)) . '*</u></i> to <i><u>' . esc_url(str_replace(home_url(), '', $page_url)) . '</u></i></label>';
+                echo '<label><input type="checkbox" name="betterportal_rewrite[' . esc_attr($page['page']->ID) . ']" value="1" ' . checked($rewrite_enabled, '1', false) . '> ' . esc_html__('Enable', 'betterportal-theme-embedded');
+                echo ' ' . esc_html__('rewrites', 'betterportal-theme-embedded') . ' <i><u>' . esc_url(str_replace(home_url(), '', $page_url)) . '*</u></i> ' . esc_html__('to', 'betterportal-theme-embedded') . ' <i><u>' . esc_url(str_replace(home_url(), '', $page_url)) . '</u></i></label>';
             }
             echo '</td>';
             echo '</tr>';
@@ -333,7 +378,8 @@ class BetterPortal_Theme_Embedded {
         echo '</tbody></table>';
     }
 
-    private function get_detailed_shortcode_info($content, $post_id) {
+    private function get_detailed_shortcode_info($content, $post_id)
+    {
         $shortcode_info = $this->get_shortcodes_info($content);
         $elementor_info = $this->get_elementor_widgets_info($post_id);
 
@@ -349,7 +395,8 @@ class BetterPortal_Theme_Embedded {
         ];
     }
 
-    private function extract_shortcode_paths($content) {
+    private function extract_shortcode_paths($content)
+    {
         $paths = [];
         if (preg_match_all('/\[betterportal_embed[^\]]*path="([^"]*)"[^\]]*\]/', $content, $matches)) {
             $paths = $matches[1];
@@ -357,7 +404,8 @@ class BetterPortal_Theme_Embedded {
         return $paths;
     }
 
-    private function extract_elementor_paths($post_id) {
+    private function extract_elementor_paths($post_id)
+    {
         $paths = [];
         if (class_exists('\Elementor\Plugin')) {
             $document = \Elementor\Plugin::$instance->documents->get($post_id);
@@ -369,7 +417,8 @@ class BetterPortal_Theme_Embedded {
         return $paths;
     }
 
-    private function find_elementor_paths_recursive($elements) {
+    private function find_elementor_paths_recursive($elements)
+    {
         $paths = [];
         foreach ($elements as $element) {
             if (isset($element['widgetType']) && $element['widgetType'] === 'betterportal_embed') {
@@ -384,13 +433,20 @@ class BetterPortal_Theme_Embedded {
         return $paths;
     }
 
-    public function handle_rewrite_settings() {
-        if (!isset($_POST['betterportal_rewrite_nonce']) || !wp_verify_nonce(wp_unslash($_POST['betterportal_rewrite_nonce']), 'betterportal_rewrite_settings')) {
+    public function handle_rewrite_settings()
+    {
+        if (
+            !isset($_POST['betterportal_rewrite_nonce']) ||
+            !wp_verify_nonce(
+                sanitize_text_field(wp_unslash($_POST['betterportal_rewrite_nonce'])),
+                'betterportal_rewrite_settings'
+            )
+        ) {
             return;
         }
 
         $pages = $this->get_pages_with_shortcode();
-        
+
         foreach ($pages as $page) {
             $enabled = isset($_POST['betterportal_rewrite'][$page['page']->ID]) ? '1' : '0';
             update_post_meta($page['page']->ID, '_betterportal_rewrite_enabled', $enabled);
@@ -402,7 +458,8 @@ class BetterPortal_Theme_Embedded {
         add_settings_error('betterportal_messages', 'betterportal_message', esc_html__('Rewrite settings saved and rewrite rules updated.', 'betterportal-theme-embedded'), 'updated');
     }
 
-    public function handle_flush_rewrites() {
+    public function handle_flush_rewrites()
+    {
         if (!current_user_can('manage_options')) {
             return;
         }
@@ -412,7 +469,8 @@ class BetterPortal_Theme_Embedded {
         add_settings_error('betterportal_messages', 'betterportal_message', 'Rewrite rules have been flushed.', 'updated');
     }
 
-    public function add_betterportal_meta_box() {
+    public function add_betterportal_meta_box()
+    {
         add_meta_box(
             'betterportal_rewrite_settings',
             'BetterPortal Settings',
@@ -423,7 +481,8 @@ class BetterPortal_Theme_Embedded {
         );
     }
 
-    public function render_betterportal_meta_box($post) {
+    public function render_betterportal_meta_box($post)
+    {
         wp_nonce_field('betterportal_rewrite_settings', 'betterportal_rewrite_settings_nonce');
 
         $rewrite_enabled = get_post_meta($post->ID, '_betterportal_rewrite_enabled', true);
@@ -431,14 +490,14 @@ class BetterPortal_Theme_Embedded {
 
         $page_info = $this->get_page_shortcode_info($post->ID);
 
-        echo '<p><strong>Shortcodes/Widgets:</strong> ' . esc_html($page_info['shortcodes_count']) . '</p>';
-        
+        echo '<p><strong>' . esc_html__('Shortcodes/Widgets:', 'betterportal-theme-embedded') . '</strong> ' . esc_html($page_info['shortcodes_count']) . '</p>';
+
         if ($page_info['needs_rewrite']) {
             echo '<label for="betterportal_rewrite_enabled">';
             echo '<input type="checkbox" id="betterportal_rewrite_enabled" name="betterportal_rewrite_enabled" value="1" ' . checked($rewrite_enabled, '1', false) . '>';
-            echo ' Enable rewrites <i><u>' . esc_url(str_replace(home_url(), '', get_permalink($post->ID))) . '*</u></i> to <i><u>' . esc_url(str_replace(home_url(), '', get_permalink($post->ID))) . '</u></i></label>';
+            echo ' ' . esc_html__('Enable rewrites', 'betterportal-theme-embedded') . ' <i><u>' . esc_url(str_replace(home_url(), '', get_permalink($post->ID))) . '*</u></i> ' . esc_html__('to', 'betterportal-theme-embedded') . ' <i><u>' . esc_url(str_replace(home_url(), '', get_permalink($post->ID))) . '</u></i></label>';
         } else {
-            echo '<p>This page does not need a rewrite rule.</p>';
+            echo '<p>' . esc_html__('This page does not need a rewrite rule.', 'betterportal-theme-embedded') . '</p>';
         }
     }
 
@@ -446,7 +505,10 @@ class BetterPortal_Theme_Embedded {
     {
         if (
             !isset($_POST['betterportal_rewrite_settings_nonce']) ||
-            !wp_verify_nonce(wp_unslash($_POST['betterportal_rewrite_settings_nonce']), 'betterportal_rewrite_settings')
+            !wp_verify_nonce(
+                sanitize_text_field(wp_unslash($_POST['betterportal_rewrite_settings_nonce'])),
+                'betterportal_rewrite_settings'
+            )
         ) {
             return;
         }
@@ -469,19 +531,8 @@ class BetterPortal_Theme_Embedded {
         }
     }
 
-    public function get_page_shortcode_info($post_id) {
-        $post = get_post($post_id);
-        $shortcodes = $this->get_shortcodes_info($post->post_content);
-        $elementor_widgets = $this->get_elementor_widgets_info($post_id);
-        
-        return array(
-            'shortcodes_count' => $shortcodes['count'] + $elementor_widgets['count'],
-            'has_path' => $shortcodes['has_path'] || $elementor_widgets['has_path'],
-            'needs_rewrite' => ($shortcodes['count'] - $shortcodes['path_count'] + $elementor_widgets['count'] - $elementor_widgets['path_count']) > 0
-        );
-    }
-
-    public function add_preconnect_header() {
+    public function add_preconnect_header()
+    {
         $host = $this->get_host();
         echo '<link rel="preconnect" href="https://' . esc_attr($host) . '" crossorigin>';
     }
