@@ -4,6 +4,7 @@ Plugin Name: BetterPortal Theme Embedded
 Description: Handles embedding BetterPortal.cloud embedded theme in your WP Site
 Version: {{VERSION}}
 Author: BetterCorp
+License: AGPL-3.0
 */
 
 if (!defined('ABSPATH')) {

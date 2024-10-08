@@ -4,6 +4,7 @@ Plugin Name: BetterPortal Theme Embedded
 Description: Handles embedding BetterPortal.cloud embedded theme in your WP Site
 Version: {{VERSION}}
 Author: BetterCorp
+License: AGPL-3.0
 */
 
 if (!defined('ABSPATH')) {
@@ -45,7 +46,8 @@ class BetterPortal_Theme_Embedded {
             'betterportal-loader',
             plugins_url('scripts/betterportal-loader.js', __FILE__),
             array(),
-            '{{VERSION}}'
+            '{{VERSION}}',
+            true
         );
     }
 
@@ -247,11 +249,11 @@ class BetterPortal_Theme_Embedded {
             return;
         }
 
-        if (isset($_POST['save_rewrite_settings'])) {
+        if (isset($_POST['save_rewrite_settings']) && check_admin_referer('betterportal_rewrite_settings', 'betterportal_rewrite_nonce')) {
             $this->handle_rewrite_settings();
         }
 
-        if (isset($_POST['flush_rewrites'])) {
+        if (isset($_POST['flush_rewrites']) && check_admin_referer('betterportal_rewrite_settings', 'betterportal_rewrite_nonce')) {
             $this->handle_flush_rewrites();
         }
 
@@ -383,7 +385,7 @@ class BetterPortal_Theme_Embedded {
     }
 
     public function handle_rewrite_settings() {
-        if (!isset($_POST['betterportal_rewrite_nonce']) || !wp_verify_nonce($_POST['betterportal_rewrite_nonce'], 'betterportal_rewrite_settings')) {
+        if (!isset($_POST['betterportal_rewrite_nonce']) || !wp_verify_nonce(wp_unslash($_POST['betterportal_rewrite_nonce']), 'betterportal_rewrite_settings')) {
             return;
         }
 
@@ -444,7 +446,7 @@ class BetterPortal_Theme_Embedded {
     {
         if (
             !isset($_POST['betterportal_rewrite_settings_nonce']) ||
-            !wp_verify_nonce($_POST['betterportal_rewrite_settings_nonce'], 'betterportal_rewrite_settings')
+            !wp_verify_nonce(wp_unslash($_POST['betterportal_rewrite_settings_nonce']), 'betterportal_rewrite_settings')
         ) {
             return;
         }
