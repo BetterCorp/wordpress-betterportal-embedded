@@ -45,9 +45,11 @@ jobs:
           fi
           
           # Construct the new version
-          new_version="v$major.$new_minor"
+          new_version="$major.$new_minor"
+          new_version_with_v="v$new_version"
           
           echo "NEW_VERSION=$new_version" >> $GITHUB_OUTPUT
+          echo "NEW_VERSION_WITH_V=$new_version_with_v" >> $GITHUB_OUTPUT
 
       - name: Build plugin
         run: |
@@ -64,15 +66,15 @@ jobs:
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
-          git tag ${{ steps.determine_version.outputs.NEW_VERSION }}
-          git push origin ${{ steps.determine_version.outputs.NEW_VERSION }}
+          git tag ${{ steps.determine_version.outputs.NEW_VERSION_WITH_V }}
+          git push origin ${{ steps.determine_version.outputs.NEW_VERSION_WITH_V }}
 
       - name: Trigger build and release
         if: success()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh workflow run release.yml --ref ${{ steps.determine_version.outputs.NEW_VERSION }}
+          gh workflow run release.yml --ref ${{ steps.determine_version.outputs.NEW_VERSION_WITH_V }}
 
       - name: Cleanup
         if: always()
@@ -80,4 +82,4 @@ jobs:
           ./cleanup.sh
 
     outputs:
-      new_version: ${{ steps.determine_version.outputs.NEW_VERSION }}
+      new_version: ${{ steps.determine_version.outputs.NEW_VERSION_WITH_V }}
