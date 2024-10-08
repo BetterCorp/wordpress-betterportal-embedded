@@ -293,7 +293,7 @@ class BetterPortal_Theme_Embedded {
         }
 
         echo '<table class="widefat" style="margin-bottom: 20px;">';
-        echo '<thead><tr><th>Page Title</th><th>URL</th><th>Shortcodes</th><th>Rewrite</th></tr></thead>';
+        echo '<thead><tr><th>Page Title</th><th>URL</th><th>Embedded Paths</th><th>Wildcard/URL Linked</th></tr></thead>';
         echo '<tbody>';
         foreach ($pages as $page) {
             $edit_link = get_edit_post_link($page['page']->ID);
@@ -301,21 +301,85 @@ class BetterPortal_Theme_Embedded {
             $rewrite_enabled = get_post_meta($page['page']->ID, '_betterportal_rewrite_enabled', true);
             $rewrite_enabled = $rewrite_enabled !== '' ? $rewrite_enabled : '1'; // Default to enabled
             
+            $shortcode_info = $this->get_detailed_shortcode_info($page['page']->post_content, $page['page']->ID);
+            
             echo '<tr>';
             echo '<td><a href="' . esc_url($edit_link) . '">' . esc_html($page['page']->post_title) . '</a></td>';
             echo '<td><a href="' . esc_url($page_url) . '" target="_blank">' . esc_url($page_url) . '</a></td>';
-            echo '<td>' . esc_html($page['shortcodes_count']) . '</td>';
             echo '<td>';
-            if ($page['needs_rewrite']) {
+            if (!empty($shortcode_info['defined_paths'])) {
+                echo '<ul style="margin: 0; padding-left: 20px;">';
+                foreach ($shortcode_info['defined_paths'] as $path) {
+                    echo '<li>' . esc_html($path) . '</li>';
+                }
+                echo '</ul>';
+            } else {
+                echo 'None';
+            }
+            echo '</td>';
+            echo '<td>';
+            $wildcard_count = $shortcode_info['total_count'] - count($shortcode_info['defined_paths']);
+            echo 'Count: ' . esc_html($wildcard_count);
+            if ($wildcard_count > 0) {
+                echo '<br>';
                 echo '<label><input type="checkbox" name="betterportal_rewrite[' . $page['page']->ID . ']" value="1" ' . checked($rewrite_enabled, '1', false) . '> Enable';
                 echo ' rewrites <i><u>' . esc_url(str_replace(home_url(), '', $page_url)) . '*</u></i> to <i><u>' . esc_url(str_replace(home_url(), '', $page_url)) . '</u></i></label>';
-            } else {
-                echo 'N/A';
             }
             echo '</td>';
             echo '</tr>';
         }
         echo '</tbody></table>';
+    }
+
+    private function get_detailed_shortcode_info($content, $post_id) {
+        $shortcode_info = $this->get_shortcodes_info($content);
+        $elementor_info = $this->get_elementor_widgets_info($post_id);
+
+        $total_count = $shortcode_info['count'] + $elementor_info['count'];
+        $defined_paths = array_merge(
+            $this->extract_shortcode_paths($content),
+            $this->extract_elementor_paths($post_id)
+        );
+
+        return [
+            'total_count' => $total_count,
+            'defined_paths' => array_unique($defined_paths)
+        ];
+    }
+
+    private function extract_shortcode_paths($content) {
+        $paths = [];
+        if (preg_match_all('/\[betterportal_embed[^\]]*path="([^"]*)"[^\]]*\]/', $content, $matches)) {
+            $paths = $matches[1];
+        }
+        return $paths;
+    }
+
+    private function extract_elementor_paths($post_id) {
+        $paths = [];
+        if (class_exists('\Elementor\Plugin')) {
+            $document = \Elementor\Plugin::$instance->documents->get($post_id);
+            if ($document) {
+                $data = $document->get_elements_data();
+                $paths = $this->find_elementor_paths_recursive($data);
+            }
+        }
+        return $paths;
+    }
+
+    private function find_elementor_paths_recursive($elements) {
+        $paths = [];
+        foreach ($elements as $element) {
+            if (isset($element['widgetType']) && $element['widgetType'] === 'betterportal_embed') {
+                if (isset($element['settings']['path']) && !empty($element['settings']['path'])) {
+                    $paths[] = $element['settings']['path'];
+                }
+            }
+            if (isset($element['elements'])) {
+                $paths = array_merge($paths, $this->find_elementor_paths_recursive($element['elements']));
+            }
+        }
+        return $paths;
     }
 
     public function handle_rewrite_settings() {
