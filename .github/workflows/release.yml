@@ -38,7 +38,7 @@ jobs:
           gh release create ${{ steps.get_version.outputs.VERSION_WITH_V }} \
             --title "Release ${{ steps.get_version.outputs.VERSION_WITH_V }}" \
             --notes "Release ${{ steps.get_version.outputs.VERSION_WITH_V }}" \
-            dist/betterportal-theme-embedded-${{ steps.get_version.outputs.VERSION }}.zip
+            dist/betterportal-theme-embedded-${{ steps.get_version.outputs.VERSION_WITH_V }}.zip
       
       - name: Cleanup
         if: always()
