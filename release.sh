@@ -10,5 +10,10 @@ VERSION=$1
 # Load environment variables
 source ./envs.sh
 
+# Create the distribution directory if it doesn't exist
 mkdir -p $DIST_DIR
-zip -r $DIST_DIR/betterportal-theme-embedded-$VERSION.zip
+
+# Change to the build directory and create the zip file
+pushd $BUILD_DIR
+zip -r $DIST_DIR/betterportal-theme-embedded-$VERSION.zip .
+popd

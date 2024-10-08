@@ -1,9 +1,12 @@
 #!/bin/bash
 
+# Get the absolute path of the current directory
+CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Directory paths
-export SOURCE_DIR="src"
-export BUILD_DIR="build"
-export DIST_DIR="dist"
+export SOURCE_DIR="$CURRENT_DIR/src"
+export BUILD_DIR="$CURRENT_DIR/build"
+export DIST_DIR="$CURRENT_DIR/dist"
 
 # File names
 export MAIN_PHP_FILE="betterportal-theme-embedded.php"
