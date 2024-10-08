@@ -51,7 +51,7 @@ class Elementor_BetterPortal_Embed_Widget extends \Elementor\Widget_Base {
     protected function render() {
         $settings = $this->get_settings_for_display();
         $betterportal = new BetterPortal_Theme_Embedded();
-        echo $betterportal->generate_embed_output($settings, rand());
+        echo wp_kses_post($betterportal->generate_embed_output($settings, wp_rand()));
     }
 
     protected function _content_template() {

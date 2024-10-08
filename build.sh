@@ -13,8 +13,9 @@ rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR
 
 cp -r $SOURCE_DIR $BUILD_DIR
-cp README.md $BUILD_DIR/README.txt
+cp PLUGIN_README.txt $BUILD_DIR/README.txt
 cp LICENSE $BUILD_DIR/LICENSE.txt
 
-sed -i "s/{{VERSION}}/$VERSION/g" $BUILD_DIR/*
-sed -i "s/{{VERSION}}/$VERSION/g" $BUILD_DIR/**/*
+sed -i "s/{{VERSION}}/$VERSION/g" $BUILD_DIR/README.txt
+sed -i "s/{{VERSION}}/$VERSION/g" $BUILD_DIR/betterportal-theme-embedded.php
+sed -i "s/{{VERSION}}/$VERSION/g" $BUILD_DIR/widgets/betterportal-embed-widget.php
