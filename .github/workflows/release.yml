@@ -1,4 +1,4 @@
-name: Build and Release
+name: Re-Build and Release
 
 on:
   workflow_dispatch:
@@ -12,11 +12,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.0'
-
       - name: Get the version
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
@@ -25,20 +20,11 @@ jobs:
         run: |
           chmod +x build.sh
           ./build.sh ${{ steps.get_version.outputs.VERSION }}
-
-      - name: Install WordPress Plugin Check
+          
+      - name: Create release artifact
         run: |
-          composer global require wp-cli/wp-cli-bundle
-          composer global require wp-cli/checksum-command
-          composer global require wp-cli/i18n-command
-          composer global require wp-coding-standards/wpcs
-          composer global require dealerdirect/phpcodesniffer-composer-installer
-          composer global require wp-cli/plugin-check-command
-
-      - name: Run Plugin Check
-        run: |
-          export PATH=$PATH:$HOME/.composer/vendor/bin
-          wp plugin check dist/betterportal-theme-embedded-${{ steps.get_version.outputs.VERSION }}.zip --format=summary
+          chmod +x release.sh
+          ./release.sh ${{ steps.get_version.outputs.VERSION }}
 
       - name: Create Release
         if: success()
@@ -49,3 +35,8 @@ jobs:
             --title "Release ${{ steps.get_version.outputs.VERSION }}" \
             --notes "Release ${{ steps.get_version.outputs.VERSION }}" \
             dist/betterportal-theme-embedded-${{ steps.get_version.outputs.VERSION }}.zip
+      
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -rf build dist

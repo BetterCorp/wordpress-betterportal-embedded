@@ -1,4 +1,4 @@
-name: Version Bump and Plugin Check
+name: Build, Test and Version plugin
 
 on:
   push:
@@ -12,11 +12,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.0'
 
       - name: Get base version from VERSION.md
         id: get_base_version
@@ -48,19 +43,10 @@ jobs:
           chmod +x build.sh
           ./build.sh ${{ steps.determine_version.outputs.NEW_VERSION }}
 
-      - name: Install WordPress Plugin Check
-        run: |
-          composer global require wp-cli/wp-cli-bundle
-          composer global require wp-cli/checksum-command
-          composer global require wp-cli/i18n-command
-          composer global require wp-coding-standards/wpcs
-          composer global require dealerdirect/phpcodesniffer-composer-installer
-          composer global require wp-cli/plugin-check-command
-
-      - name: Run Plugin Check
-        run: |
-          export PATH=$PATH:$HOME/.composer/vendor/bin
-          wp plugin check dist/betterportal-theme-embedded-${{ steps.determine_version.outputs.NEW_VERSION }}.zip --format=summary
+      - name: Run plugin check
+        uses: wordpress/plugin-check-action@v1
+        with:
+          build-dir: build
 
       - name: Create and push new tag
         if: success()
@@ -76,6 +62,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh workflow run build-and-release.yml --ref ${{ steps.determine_version.outputs.NEW_VERSION }}
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -rf build dist
 
     outputs:
       new_version: ${{ steps.determine_version.outputs.NEW_VERSION }}
