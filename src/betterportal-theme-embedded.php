@@ -9,27 +9,27 @@ class BetterPortal_Theme_Embedded
 
     public function __construct()
     {
-        add_action('init', array($this, 'init'));
-        add_action('admin_menu', array($this, 'add_settings_page'));
-        add_action('admin_init', array($this, 'register_settings'));
-        add_shortcode('betterportal_embed', array($this, 'betterportal_embed_shortcode'));
-        add_action('elementor/widgets/widgets_registered', array($this, 'register_elementor_widget'));
-        add_action('elementor/elements/categories_registered', array($this, 'add_elementor_widget_category'));
-        add_action('save_post', array($this, 'maybe_flush_rules'));
-        add_filter('the_content', array($this, 'check_for_shortcode'));
-        add_action('admin_init', array($this, 'handle_flush_rewrites'));
-        add_action('add_meta_boxes', array($this, 'add_betterportal_meta_box'));
-        add_action('save_post', array($this, 'save_betterportal_meta_box'));
-        add_action('wp_enqueue_scripts', array($this, 'enqueue_scripts_and_styles'));
-        add_action('wp_head', array($this, 'add_preconnect_header'), 1);
+        add_action('init', array($this, 'betterportal_theme_embedded_init'));
+        add_action('admin_menu', array($this, 'betterportal_theme_embedded_add_settings_page'));
+        add_action('admin_init', array($this, 'betterportal_theme_embedded_register_settings'));
+        add_shortcode('betterportal_embed', array($this, 'betterportal_theme_embedded_betterportal_embed_shortcode'));
+        add_action('elementor/widgets/widgets_registered', array($this, 'betterportal_theme_embedded_register_elementor_widget'));
+        add_action('elementor/elements/categories_registered', array($this, 'betterportal_theme_embedded_add_elementor_widget_category'));
+        add_action('save_post', array($this, 'betterportal_theme_embedded_maybe_flush_rules'));
+        add_filter('the_content', array($this, 'betterportal_theme_embedded_check_for_shortcode'));
+        add_action('admin_init', array($this, 'betterportal_theme_embedded_handle_flush_rewrites'));
+        add_action('add_meta_boxes', array($this, 'betterportal_theme_embedded_add_betterportal_meta_box'));
+        add_action('save_post', array($this, 'betterportal_theme_embedded_save_betterportal_meta_box'));
+        add_action('wp_enqueue_scripts', array($this, 'betterportal_theme_embedded_enqueue_scripts_and_styles'));
+        add_action('wp_head', array($this, 'betterportal_theme_embedded_add_preconnect_header'), 1);
     }
 
-    public function init()
+    public function betterportal_theme_embedded_init()
     {
         $this->register_betterportal_rewrites();
     }
 
-    public function enqueue_scripts_and_styles()
+    public function betterportal_theme_embedded_enqueue_scripts_and_styles()
     {
         if ($this->current_page_has_betterportal()) {
             wp_enqueue_style(
@@ -167,7 +167,7 @@ class BetterPortal_Theme_Embedded
         return array('count' => $count, 'path_count' => $path_count, 'has_path' => $has_path);
     }
 
-    public function maybe_flush_rules($post_id)
+    public function betterportal_theme_embedded_maybe_flush_rules($post_id)
     {
         if (wp_is_post_revision($post_id)) {
             return;
@@ -176,10 +176,10 @@ class BetterPortal_Theme_Embedded
         flush_rewrite_rules();
     }
 
-    public function check_for_shortcode($content)
+    public function betterportal_theme_embedded_check_for_shortcode($content)
     {
         if ($this->page_has_shortcode($content)) {
-            $this->maybe_flush_rules(get_the_ID());
+            $this->betterportal_theme_embedded_maybe_flush_rules(get_the_ID());
         }
         return $content;
     }
@@ -189,7 +189,7 @@ class BetterPortal_Theme_Embedded
         return has_shortcode($content, 'betterportal_embed');
     }
 
-    public function betterportal_embed_shortcode($atts)
+    public function betterportal_theme_embedded_betterportal_embed_shortcode($atts)
     {
         static $instance = 0;
         $instance++;
@@ -226,13 +226,13 @@ class BetterPortal_Theme_Embedded
         return isset($options['host']) && !empty($options['host']) ? $options['host'] : $this->defaultHost;
     }
 
-    public function register_elementor_widget($widgets_manager)
+    public function betterportal_theme_embedded_register_elementor_widget($widgets_manager)
     {
         require_once(__DIR__ . '/widgets/betterportal-embed-widget.php');
-        $widgets_manager->register_widget_type(new \Elementor_BetterPortal_Embed_Widget());
+        $widgets_manager->register_widget_type(new \BetterPortal_Theme_Embedded_Elementor_Embed_Widget());
     }
 
-    public function add_elementor_widget_category($elements_manager)
+    public function betterportal_theme_embedded_add_elementor_widget_category($elements_manager)
     {
         $elements_manager->add_category(
             'betterportal',
@@ -243,7 +243,7 @@ class BetterPortal_Theme_Embedded
         );
     }
 
-    public function add_settings_page()
+    public function betterportal_theme_embedded_add_settings_page()
     {
         add_options_page(
             'BetterPortal Settings',
@@ -254,7 +254,7 @@ class BetterPortal_Theme_Embedded
         );
     }
 
-    public function register_settings()
+    public function betterportal_theme_embedded_register_settings()
     {
         register_setting('betterportal_options', 'betterportal_options');
 
@@ -290,7 +290,7 @@ class BetterPortal_Theme_Embedded
         }
 
         if (isset($_POST['flush_rewrites']) && check_admin_referer('betterportal_rewrite_settings', 'betterportal_rewrite_nonce')) {
-            $this->handle_flush_rewrites();
+            $this->betterportal_theme_embedded_handle_flush_rewrites();
         }
 
 ?>
@@ -450,7 +450,7 @@ class BetterPortal_Theme_Embedded
         add_settings_error('betterportal_messages', 'betterportal_message', esc_html__('Rewrite settings saved and rewrite rules updated.', 'betterportal-theme-embedded'), 'updated');
     }
 
-    public function handle_flush_rewrites()
+    public function betterportal_theme_embedded_handle_flush_rewrites()
     {
         if (!current_user_can('manage_options')) {
             return;
@@ -461,7 +461,7 @@ class BetterPortal_Theme_Embedded
         add_settings_error('betterportal_messages', 'betterportal_message', 'Rewrite rules have been flushed.', 'updated');
     }
 
-    public function add_betterportal_meta_box()
+    public function betterportal_theme_embedded_add_betterportal_meta_box()
     {
         add_meta_box(
             'betterportal_rewrite_settings',
@@ -493,7 +493,7 @@ class BetterPortal_Theme_Embedded
         }
     }
 
-    public function save_betterportal_meta_box($post_id)
+    public function betterportal_theme_embedded_save_betterportal_meta_box($post_id)
     {
         if (
             !isset($_POST['betterportal_rewrite_settings_nonce']) ||
@@ -523,7 +523,7 @@ class BetterPortal_Theme_Embedded
         }
     }
 
-    public function add_preconnect_header()
+    public function betterportal_theme_embedded_add_preconnect_header()
     {
         $host = $this->get_host();
         echo '<link rel="preconnect" href="https://' . esc_attr($host) . '" crossorigin>';

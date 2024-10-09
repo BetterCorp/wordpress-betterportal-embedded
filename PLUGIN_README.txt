@@ -5,6 +5,8 @@ Tested up to: 6.6.2
 Stable tag: {{VERSION}}
 License: AGPL-3.0
 License URI: https://github.com/BetterCorp/wordpress-betterportal-embedded/blob/master/LICENSE
+Requires PHP: 8.2
+Contributors: betterweb
 
 Easily embed BetterPortal.cloud embedded theme in your WordPress site.
 
@@ -19,6 +21,13 @@ This plugin pulls in pages hosted with BetterPortal Embedded Theme and displays 
 == Frequently Asked Questions ==
 = How do I embed a BetterPortal theme? =
 Use the [betterportal_embed] shortcode or the BetterPortal Embed Elementor widget in your pages.
+= Something is not working? =
+Please contact your BetterPortal.cloud account manager for support.
+
+== Screenshots ==
+1. Settings page
+2. Elementor widget
+3. Embedded loading widget
 
 == Changelog ==
 = 1.0.0 =

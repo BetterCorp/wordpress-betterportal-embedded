@@ -15,7 +15,7 @@ chmod +x ./cleanup.sh
 mkdir -p $BUILD_DIR
 
 cp -r $SOURCE_DIR/* $BUILD_DIR
-cp PLUGIN_README.txt $BUILD_DIR/README.txt
+cp PLUGIN_README.txt $BUILD_DIR/readme.txt
 cp LICENSE $BUILD_DIR/LICENSE.txt
 
 # Copy DEFINITION.txt to build directory and replace VERSION
@@ -78,7 +78,7 @@ add_definition "$BUILD_DIR/css/betterportal-loader.min.css" false
 add_definition "$BUILD_DIR/scripts/betterportal-loader.min.js" false
 
 # Replace version placeholders in other files
-sed -i "s/{{VERSION}}/$VERSION/g" $BUILD_DIR/README.txt
+sed -i "s/{{VERSION}}/$VERSION/g" $BUILD_DIR/readme.txt
 sed -i "s/{{VERSION}}/$VERSION/g" $BUILD_DIR/betterportal-theme-embedded.php
 sed -i "s/{{VERSION}}/$VERSION/g" $BUILD_DIR/widgets/betterportal-embed-widget.php
 sed -i "s/{{VERSION}}/$VERSION/g" $BUILD_DIR/css/betterportal-loader.min.css

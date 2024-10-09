@@ -3,7 +3,7 @@ if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
 
-class Elementor_BetterPortal_Embed_Widget extends \Elementor\Widget_Base
+class BetterPortal_Theme_Embedded_Elementor_Embed_Widget extends \Elementor\Widget_Base
 {
     public function get_name()
     {

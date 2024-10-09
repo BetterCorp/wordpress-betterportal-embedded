@@ -39,6 +39,10 @@ jobs:
             --title "Release ${{ steps.get_version.outputs.VERSION_WITH_V }}" \
             --notes "Release ${{ steps.get_version.outputs.VERSION_WITH_V }}" \
             dist/betterportal-theme-embedded-${{ steps.get_version.outputs.VERSION_WITH_V }}.zip
+
+      - name: Update SVN with latest code
+        run: |
+          ./update-svn.sh
       
       - name: Cleanup
         if: always()
