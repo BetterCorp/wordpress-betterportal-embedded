@@ -56,10 +56,27 @@ jobs:
           chmod +x build.sh
           ./build.sh ${{ steps.determine_version.outputs.NEW_VERSION }}
 
+      - name: Create release artifact
+        run: |
+          chmod +x release.sh
+          ./release.sh ${{ steps.get_version.outputs.VERSION }}
+
       - name: Run plugin check
         uses: wordpress/plugin-check-action@v1
         with:
           build-dir: build/betterportal-theme-embedded
+
+      - name: Upload plugin test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-test-results
+          path: /home/runner/work/_temp/plugin-check-results.txt
+          
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifact
+          path: dist/betterportal-theme-embedded-v$VERSION.zip
 
       - name: Create and push new tag
         if: success()

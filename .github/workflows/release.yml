@@ -20,15 +20,11 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "VERSION_WITH_V=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
-      - name: Build plugin
-        run: |
-          chmod +x build.sh
-          ./build.sh ${{ steps.get_version.outputs.VERSION }}
-          
-      - name: Create release artifact
-        run: |
-          chmod +x release.sh
-          ./release.sh ${{ steps.get_version.outputs.VERSION }}
+      - name: Download release artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifact
+          path: dist/betterportal-theme-embedded-v$VERSION.zip
 
       - name: Create Release
         if: success()
