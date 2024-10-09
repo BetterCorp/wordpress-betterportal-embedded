@@ -42,9 +42,11 @@ jobs:
 
       - name: Update SVN with latest code
         run: |
+          chmod +x update-svn.sh
           ./update-svn.sh
       
       - name: Cleanup
         if: always()
         run: |
+          chmod +x cleanup.sh
           ./cleanup.sh

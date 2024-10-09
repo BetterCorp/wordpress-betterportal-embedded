@@ -59,7 +59,7 @@ jobs:
       - name: Run plugin check
         uses: wordpress/plugin-check-action@v1
         with:
-          build-dir: build
+          build-dir: build/betterportal-theme-embedded
 
       - name: Create and push new tag
         if: success()
@@ -79,6 +79,7 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
+          chmod +x cleanup.sh
           ./cleanup.sh
 
     outputs:
