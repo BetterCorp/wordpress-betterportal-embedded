@@ -76,7 +76,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: release-artifact
-          path: dist/betterportal-theme-embedded-v$VERSION.zip
+          path: dist/*.zip
 
       - name: Create and push new tag
         if: success()
