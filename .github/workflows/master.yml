@@ -56,11 +56,6 @@ jobs:
           chmod +x build.sh
           ./build.sh ${{ steps.determine_version.outputs.NEW_VERSION }}
 
-      - name: Create release artifact
-        run: |
-          chmod +x release.sh
-          ./release.sh ${{ steps.determine_version.outputs.NEW_VERSION }}
-
       - name: Run plugin check
         uses: wordpress/plugin-check-action@v1
         with:
@@ -72,12 +67,6 @@ jobs:
           name: plugin-test-results
           path: /home/runner/work/_temp/plugin-check-results.txt
           
-      - name: Upload release artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-artifact
-          path: dist/*.zip
-
       - name: Create and push new tag
         if: success()
         run: |
