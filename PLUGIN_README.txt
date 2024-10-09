@@ -11,6 +11,7 @@ Contributors: betterweb
 Easily embed BetterPortal.cloud embedded theme in your WordPress site.
 
 == Description ==
+NOTE: If you are not using BetterPortal, then do not install this plugin.
 This plugin pulls in pages hosted with BetterPortal Embedded Theme and displays them within your WP site.
 
 == Installation ==
