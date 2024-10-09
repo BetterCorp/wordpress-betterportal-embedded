@@ -87,3 +87,15 @@ sed -i "s/{{VERSION}}/$VERSION/g" $BUILD_DIR/scripts/betterportal-loader.min.js
 # Update references to use minified files
 sed -i 's/betterportal-loader\.css/betterportal-loader.min.css/g' $BUILD_DIR/betterportal-theme-embedded.php
 sed -i 's/betterportal-loader\.js/betterportal-loader.min.js/g' $BUILD_DIR/betterportal-theme-embedded.php
+
+TEMP_DIR=$(mktemp -d)
+T_PLUGIN_DIR="$TEMP_DIR/$PLUGIN_DIR"
+mkdir -p "$T_PLUGIN_DIR"
+
+cp -R $BUILD_DIR/* "$T_PLUGIN_DIR"
+
+rm -rf $BUILD_DIR/*
+
+mv $T_PLUGIN_DIR $BUILD_DIR
+
+rm -rf $TEMP_DIR
