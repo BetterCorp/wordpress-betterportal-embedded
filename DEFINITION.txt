@@ -3,7 +3,7 @@
  * Plugin URI: https://github.com/BetterCorp/wordpress-betterportal-embedded
  * Description: Handles embedding BetterPortal.cloud embedded theme in your WP Site
  * Author: BetterCorp
- * Author URI: https://bettercorp.dev
+ * Author URI: https://www.bettercorp.dev
  * Version: {{VERSION}}
  * License: AGPL-3.0
  * Text Domain: betterportal-theme-embedded
