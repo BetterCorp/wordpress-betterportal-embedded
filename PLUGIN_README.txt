@@ -5,7 +5,7 @@ Tested up to: 6.6.2
 Stable tag: {{VERSION}}
 License: AGPL-3.0
 License URI: https://github.com/BetterCorp/wordpress-betterportal-embedded/blob/master/LICENSE
-Requires PHP: 8.2
+Requires PHP: 8.1
 Contributors: betterweb
 
 Easily embed BetterPortal.cloud embedded theme in your WordPress site.
