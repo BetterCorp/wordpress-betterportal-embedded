@@ -7,6 +7,8 @@ CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export SOURCE_DIR="$CURRENT_DIR/src"
 export BUILD_DIR="$CURRENT_DIR/build"
 export DIST_DIR="$CURRENT_DIR/dist"
+export DIST_RELEASE_SRC_DIR="$CURRENT_DIR/release/src"
+export DIST_RELEASE_ASSETS_DIR="$CURRENT_DIR/release/assets"
 
 # File names
 export MAIN_PHP_FILE="betterportal-theme-embedded.php"

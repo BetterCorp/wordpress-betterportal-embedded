@@ -46,10 +46,15 @@ jobs:
             --notes "Release ${{ steps.get_version.outputs.VERSION_WITH_V }}" \
             dist/betterportal-theme-embedded-${{ steps.get_version.outputs.VERSION_WITH_V }}.zip
 
-      - name: Update SVN with latest code
-        run: |
-          chmod +x update-svn.sh
-          ./update-svn.sh
+      - name: WordPress Plugin Deploy
+        uses: nk-o/action-wordpress-plugin-deploy@master
+        env:
+          SVN_PASSWORD: ${{ secrets.WORDPRESS_SVN_PASSWORD }}
+          SVN_USERNAME: ${{ secrets.WORDPRESS_SVN_USERNAME }}
+          SOURCE_DIR: release/src/
+          ASSETS_DIR: release/assets/
+          VERSION: ${{ steps.get_version.outputs.VERSION }}
+          SLUG: betterportal-theme-embedded
       
       - name: Cleanup
         if: always()
