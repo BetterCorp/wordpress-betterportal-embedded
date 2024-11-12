@@ -11,6 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (form.classList.contains('bpe-wp-loader-container')) {
         form.innerHTML = '<p style="text-align: center; padding: 20px 10px 20px 10px;">An error occured. Please try again later</p>';
       }
-    },5000);
+    },60000);
   });
 });
