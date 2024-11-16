@@ -22,6 +22,7 @@ class BetterPortal_Theme_Embedded
         add_action('save_post', array($this, 'betterportal_theme_embedded_save_betterportal_meta_box'));
         add_action('wp_enqueue_scripts', array($this, 'betterportal_theme_embedded_enqueue_scripts_and_styles'));
         add_action('wp_head', array($this, 'betterportal_theme_embedded_add_preconnect_header'), 1);
+        add_filter('pre_update_option_betterportal_options', array($this, 'maybe_generate_dev_guid'), 10, 1);
     }
 
     public function betterportal_theme_embedded_init()
@@ -204,7 +205,7 @@ class BetterPortal_Theme_Embedded
     public function generate_embed_output($atts, $instance)
     {
         $div_id = esc_attr('betterportal-form-' . $instance);
-        $host = $this->get_host();
+        $host = $this->get_active_host();
         $script_url = 'https://' . esc_attr($host) . '/import.js?div=' . $div_id;
 
         if (!empty($atts['path'])) {
@@ -224,6 +225,26 @@ class BetterPortal_Theme_Embedded
     {
         $options = get_option('betterportal_options');
         return isset($options['host']) && !empty($options['host']) ? $options['host'] : $this->defaultHost;
+    }
+
+    public function get_active_host()
+    {
+        $options = get_option('betterportal_options');
+        
+        if (
+            isset($options['dev_mode']) && 
+            $options['dev_mode'] && 
+            isset($options['dev_host']) && 
+            !empty($options['dev_host']) &&
+            isset($options['dev_guid']) && 
+            !empty($options['dev_guid']) &&
+            isset($_GET['bpe_dev_guid']) && 
+            $_GET['bpe_dev_guid'] === $options['dev_guid']
+        ) {
+            return $options['dev_host'];
+        }
+        
+        return $this->get_host();
     }
 
     public function betterportal_theme_embedded_register_elementor_widget($widgets_manager)
@@ -256,7 +277,7 @@ class BetterPortal_Theme_Embedded
 
     public function betterportal_theme_embedded_register_settings()
     {
-        register_setting('betterportal_options', 'betterportal_options');
+        register_setting('betterportal_options', 'betterportal_options', array($this, 'sanitize_options'));
 
         add_settings_section(
             'betterportal_config_section',
@@ -264,10 +285,27 @@ class BetterPortal_Theme_Embedded
             null,
             'betterportal-settings'
         );
+
         add_settings_field(
             'betterportal_host',
             'BetterPortal Host',
             array($this, 'host_field_callback'),
+            'betterportal-settings',
+            'betterportal_config_section'
+        );
+
+        add_settings_field(
+            'betterportal_dev_host',
+            'Development Host',
+            array($this, 'dev_host_field_callback'),
+            'betterportal-settings',
+            'betterportal_config_section'
+        );
+        
+        add_settings_field(
+            'betterportal_dev_mode',
+            'Development Mode',
+            array($this, 'dev_mode_field_callback'),
             'betterportal-settings',
             'betterportal_config_section'
         );
@@ -277,6 +315,27 @@ class BetterPortal_Theme_Embedded
     {
         $host = $this->get_host();
         echo "<input type='text' name='betterportal_options[host]' value='" . esc_attr($host) . "' />";
+    }
+
+    public function dev_host_field_callback()
+    {
+        $options = get_option('betterportal_options');
+        $dev_host = isset($options['dev_host']) ? $options['dev_host'] : '';
+        echo "<input type='text' name='betterportal_options[dev_host]' value='" . esc_attr($dev_host) . "' />";
+    }
+
+    public function dev_mode_field_callback()
+    {
+        $options = get_option('betterportal_options');
+        $dev_mode = isset($options['dev_mode']) ? $options['dev_mode'] : false;
+        $dev_guid = isset($options['dev_guid']) ? $options['dev_guid'] : '';
+        
+        echo "<label><input type='checkbox' name='betterportal_options[dev_mode]' value='1' " . checked($dev_mode, true, false) . " /> Enable Development Mode</label>";
+        
+        if ($dev_mode && !empty($dev_guid)) {
+            echo "<br /><br />Development GUID: <code>" . esc_html($dev_guid) . "</code>";
+            echo "<br />You can add the following to a URL in order to switch to the development environment: <code>?bpe_dev_guid=" . esc_attr($dev_guid) . "</code>";
+        }
     }
 
     public function render_settings_page()
@@ -525,8 +584,70 @@ class BetterPortal_Theme_Embedded
 
     public function betterportal_theme_embedded_add_preconnect_header()
     {
-        $host = $this->get_host();
+        $host = $this->get_active_host();
         echo '<link rel="preconnect" href="https://' . esc_attr($host) . '" crossorigin>';
+    }
+
+    public function maybe_generate_dev_guid($options_input)
+    {
+        $old_options = get_option('betterportal_options', array());
+        
+        // Check if dev_mode is being enabled
+        if (
+            isset($options_input['dev_mode']) && 
+            $options_input['dev_mode'] && 
+            (!isset($old_options['dev_mode']) || !$old_options['dev_mode'])
+        ) {
+            $options_input['dev_guid'] = wp_generate_uuid4();
+        }
+        
+        // If dev_mode is disabled, clear the GUID
+        if (!isset($options_input['dev_mode']) || !$options_input['dev_mode']) {
+            $options_input['dev_guid'] = '';
+        }
+        
+        return $options_input;
+    }
+
+    public function sanitize_options($input)
+    {
+        $old_options = get_option('betterportal_options', array());
+        
+        // If host is changed
+        if (isset($input['host']) && (!isset($old_options['host']) || $input['host'] !== $old_options['host'])) {
+            // Auto-set dev host if the main host is a betterportal.net domain
+            if (strpos($input['host'], '.betterportal.net') !== false) {
+                $input['dev_host'] = str_replace('.net', '.dev', $input['host']);
+            }
+            
+            // Disable dev mode when host changes
+            $input['dev_mode'] = false;
+            $input['dev_guid'] = '';
+        }
+
+        // Ensure dev_host is set
+        if (!isset($input['dev_host']) || empty($input['dev_host'])) {
+            if (strpos($input['host'], '.betterportal.net') !== false) {
+              $input['dev_host'] = str_replace('.net', '.dev', isset($input['host']) ? $input['host'] : $this->defaultHost);
+            } else {
+                $input['dev_host'] = isset($input['host']) ? $input['host'] : $this->defaultHost;
+            }
+        }
+        
+        // Handle GUID generation
+        if (
+            isset($input['dev_mode']) && 
+            $input['dev_mode'] && 
+            (!isset($old_options['dev_mode']) || !$old_options['dev_mode'])
+        ) {
+            $input['dev_guid'] = wp_generate_uuid4();
+        }
+        
+        if (!isset($input['dev_mode']) || !$input['dev_mode']) {
+            $input['dev_guid'] = '';
+        }
+        
+        return $input;
     }
 }
 
