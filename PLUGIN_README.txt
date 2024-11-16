@@ -1,7 +1,7 @@
 == BetterPortal Theme Embedded ===
 Tags: betterportal, embed, theme, betterportal.cloud
 Requires at least: 6.0
-Tested up to: 6.6.2
+Tested up to: 6.7
 Stable tag: {{VERSION}}
 License: AGPL-3.0
 License URI: https://github.com/BetterCorp/wordpress-betterportal-embedded/blob/master/LICENSE
