@@ -23,6 +23,7 @@ class BetterPortal_Theme_Embedded
         add_action('wp_enqueue_scripts', array($this, 'betterportal_theme_embedded_enqueue_scripts_and_styles'));
         add_action('wp_head', array($this, 'betterportal_theme_embedded_add_preconnect_header'), 1);
         add_filter('pre_update_option_betterportal_options', array($this, 'maybe_generate_dev_guid'), 10, 1);
+        add_action('admin_bar_menu', array($this, 'betterportal_theme_embedded_add_dev_mode_button'), 100);
     }
 
     public function betterportal_theme_embedded_init()
@@ -648,6 +649,54 @@ class BetterPortal_Theme_Embedded
         }
         
         return $input;
+    }
+
+    public function betterportal_theme_embedded_add_dev_mode_button($admin_bar)
+    {
+        if (!current_user_can('manage_options') || !$this->current_page_has_betterportal()) {
+            return;
+        }
+
+        $options = get_option('betterportal_options');
+        $dev_mode_enabled = $options['dev_mode'] ?? false;
+        // Only show the button if dev mode is enabled and the query string is present
+        if (!$dev_mode_enabled) {
+            return;
+        }
+
+        $dev_guid = $options['dev_guid'] ?? '';
+        // Check if the bpe_dev_guid query string is present in the URL
+        $is_dev_mode = isset($_GET['bpe_dev_guid']);
+        
+        if ($is_dev_mode) {
+            $url = remove_query_arg('bpe_dev_guid', $_SERVER['REQUEST_URI']);
+            $button_text = 'BetterPortal: Switch to Live';
+            $new_url = $url; // Remove the query string to switch to live
+
+            $admin_bar->add_node(array(
+                'id'    => 'betterportal-dev-mode-toggle',
+                'title' => esc_html($button_text),
+                'href'  => esc_url($new_url),
+                'meta'  => array(
+                    'class' => 'betterportal-dev-mode-button',
+                    'style' => 'background-color: red; color: white; padding: 5px; border: none; cursor: pointer;',
+                ),
+            ));
+            return;
+        }
+        // If dev mode is enabled but not currently in dev mode, show the button to switch to dev
+        $url = add_query_arg('bpe_dev_guid', $dev_guid, $_SERVER['REQUEST_URI']);
+        $button_text = 'BetterPortal: Switch to Dev';
+
+        $admin_bar->add_node(array(
+            'id'    => 'betterportal-dev-mode-toggle',
+            'title' => esc_html($button_text),
+            'href'  => esc_url($url),
+            'meta'  => array(
+                'class' => 'betterportal-dev-mode-button',
+                'style' => 'padding: 5px; border: none; cursor: pointer;',
+            ),
+        ));
     }
 }
 
